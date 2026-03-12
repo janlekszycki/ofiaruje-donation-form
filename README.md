@@ -4,27 +4,20 @@ Wtyczka WordPress umożliwiająca osadzenie formularza darowizny platformy **ofi
 
 ---
 
-## Instalacja
+## Instalacja (GitHub)
 
-1. Skompresuj folder `ofiaruje-donation-form/` do pliku ZIP:
-   ```bash
-   zip -r ofiaruje-donation-form.zip ofiaruje-donation-form/
-   ```
-2. W panelu WordPress przejdź do **Wtyczki → Dodaj nową → Wyślij wtyczkę**.
-3. Wybierz plik `ofiaruje-donation-form.zip` i kliknij **Zainstaluj teraz**.
-4. Aktywuj wtyczkę.
+GitHub jest podstawowym źródłem dystrybucji wtyczki.
 
-## Instalacja z GitHub
-
-Wtyczka może być udostępniana i aktualizowana przez GitHub.
-
-1. Wejdź do repozytorium: `https://github.com/<OWNER>/<REPO>`
-2. Pobierz kod jako ZIP (`Code -> Download ZIP`) albo paczkę z `Releases`.
+1. Wejdź do repozytorium: `https://github.com/janlekszycki/ofiaruje-donation-form`.
+2. Pobierz paczkę ZIP:
+   - `Code -> Download ZIP` (wersja bieżąca), albo
+   - `Releases` (zalecane dla stabilnych wydań).
 3. Upewnij się, że archiwum zawiera katalog `ofiaruje-donation-form/`.
-4. Wgraj ZIP w WordPress: **Wtyczki -> Dodaj nową -> Wyślij wtyczkę**.
-5. Aktywuj wtyczkę.
+4. W panelu WordPress przejdź do **Wtyczki -> Dodaj nową -> Wyślij wtyczkę**.
+5. Wybierz pobrany ZIP i kliknij **Zainstaluj teraz**.
+6. Aktywuj wtyczkę.
 
-> Uwaga: Podmień `<OWNER>/<REPO>` na docelowy adres repozytorium.
+> Repozytorium publiczne: `janlekszycki/ofiaruje-donation-form`.
 
 ---
 
@@ -95,8 +88,9 @@ Po zatwierdzeniu formularz kieruje darczyńcę bezpośrednio do strony płatnoś
 
 ## GitHub
 
-- Kod pluginu: `https://github.com/<OWNER>/<REPO>`
+- Kod pluginu: `https://github.com/janlekszycki/ofiaruje-donation-form`
 - Katalog pluginu: `wordpress-plugin/ofiaruje-donation-form/`
+- GitHub to podstawowy kanał publikacji i aktualizacji.
 - Zalecenie dla wdrożeń: publikuj gotowy ZIP pluginu jako artefakt w `Releases`.
 
 ---
