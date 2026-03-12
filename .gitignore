@@ -11,3 +11,6 @@
 
 # Archives
 *.zip
+
+# Marketing subpage
+SUBPAGE_CONTENT_BOOTSTRAP.html
