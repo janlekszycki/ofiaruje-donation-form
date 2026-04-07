@@ -3,7 +3,7 @@
  * Plugin Name:  Ofiaruje – Formularz Darowizn
  * Plugin URI:   https://ofiaruje.pl
  * Description:  Osadza formularz darowizny platformy Ofiaruje.pl na dowolnej stronie WordPress za pomocą shortcode [ofiaruje_formularz].
- * Version:      1.0.0
+ * Version:      2.0.0
  * Author:       Ofiaruje.pl
  * Author URI:   https://ofiaruje.pl
  * Text Domain:  ofiaruje-donation-form
@@ -77,6 +77,33 @@ function ofiaruje_register_settings() {
 
     register_setting(
         'ofiaruje_settings_group',
+        'ofiaruje_enable_single',
+        [
+            'sanitize_callback' => 'ofiaruje_sanitize_toggle',
+            'default'           => '1',
+        ]
+    );
+
+    register_setting(
+        'ofiaruje_settings_group',
+        'ofiaruje_enable_recurring',
+        [
+            'sanitize_callback' => 'ofiaruje_sanitize_toggle',
+            'default'           => '1',
+        ]
+    );
+
+    register_setting(
+        'ofiaruje_settings_group',
+        'ofiaruje_default_donation_type',
+        [
+            'sanitize_callback' => 'ofiaruje_sanitize_default_donation_type',
+            'default'           => 'single',
+        ]
+    );
+
+    register_setting(
+        'ofiaruje_settings_group',
         'ofiaruje_utm_enabled',
         [
             'sanitize_callback' => 'ofiaruje_sanitize_toggle',
@@ -134,6 +161,10 @@ function ofiaruje_sanitize_toggle( $input ) {
     return (string) ( ! empty( $input ) ? '1' : '0' );
 }
 
+function ofiaruje_sanitize_default_donation_type( $input ) {
+    return 'recurring' === $input ? 'recurring' : 'single';
+}
+
 /**
  * Validate and sanitize comma-separated preset amounts.
  * Each value must be an integer >= 20.
@@ -180,6 +211,9 @@ function ofiaruje_render_settings_page() {
 
     $saved_custom_css = (string) get_option( 'ofiaruje_custom_css', '' );
     $default_css      = ofiaruje_default_inline_css();
+    $enable_single    = get_option( 'ofiaruje_enable_single', '1' ) === '1';
+    $enable_recurring = get_option( 'ofiaruje_enable_recurring', '1' ) === '1';
+    $both_types_on    = $enable_single && $enable_recurring;
     $textarea_css     = '' !== trim( $saved_custom_css )
         ? $saved_custom_css
         : $default_css;
@@ -385,6 +419,35 @@ function ofiaruje_render_settings_page() {
                         </td>
                     </tr>
 
+                    <!-- Donation types visibility -->
+                    <tr>
+                        <th scope="row">Widoczność typów wpłat</th>
+                        <td>
+                            <label style="display:block;margin-bottom:8px;">
+                                <input type="checkbox" id="ofiaruje-enable-single" name="ofiaruje_enable_single" value="1" <?php checked( get_option( 'ofiaruje_enable_single', '1' ), '1' ); ?>>
+                                Pokazuj „Wpłata jednorazowa”
+                            </label>
+                            <label style="display:block;">
+                                <input type="checkbox" id="ofiaruje-enable-recurring" name="ofiaruje_enable_recurring" value="1" <?php checked( get_option( 'ofiaruje_enable_recurring', '1' ), '1' ); ?>>
+                                Pokazuj „Wpłata miesięczna”
+                            </label>
+                            <p class="description" style="margin-top:8px;">
+                                Domyślnie oba typy wpłat są włączone. Gdy aktywny jest tylko jeden tryb, formularz ukryje zakładki i użyje tego trybu automatycznie.
+                            </p>
+
+                            <div id="ofiaruje-default-type-wrap" style="margin-top:12px;<?php echo $both_types_on ? '' : 'display:none;'; ?>">
+                                <p style="margin:0 0 6px;"><strong>Domyślny typ wpłaty</strong></p>
+                                <select id="ofiaruje-default-type-select" name="ofiaruje_default_donation_type" <?php disabled( $both_types_on, false ); ?>>
+                                    <option value="single" <?php selected( get_option( 'ofiaruje_default_donation_type', 'single' ), 'single' ); ?>>Wpłata jednorazowa</option>
+                                    <option value="recurring" <?php selected( get_option( 'ofiaruje_default_donation_type', 'single' ), 'recurring' ); ?>>Wpłata miesięczna</option>
+                                </select>
+                                <p class="description" style="margin-top:8px;">
+                                    Ustawienie ma zastosowanie tylko wtedy, gdy oba typy wpłat są włączone.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
                 </tbody>
             </table>
 
@@ -396,6 +459,10 @@ function ofiaruje_render_settings_page() {
                 var setDefaultsBtn = document.getElementById('ofiaruje-set-default-css');
                 var cssTextarea = document.getElementById('ofiaruje_custom_css');
                 var defaultCss = <?php echo wp_json_encode( $default_css ); ?>;
+                var singleToggle = document.getElementById('ofiaruje-enable-single');
+                var recurringToggle = document.getElementById('ofiaruje-enable-recurring');
+                var defaultTypeWrap = document.getElementById('ofiaruje-default-type-wrap');
+                var defaultTypeSelect = document.getElementById('ofiaruje-default-type-select');
 
                 if (!setDefaultsBtn || !cssTextarea) {
                     return;
@@ -405,6 +472,24 @@ function ofiaruje_render_settings_page() {
                     cssTextarea.value = defaultCss;
                     cssTextarea.focus();
                 });
+
+                function syncDefaultTypeVisibility() {
+                    if (!singleToggle || !recurringToggle || !defaultTypeWrap || !defaultTypeSelect) {
+                        return;
+                    }
+
+                    var bothOn = singleToggle.checked && recurringToggle.checked;
+                    defaultTypeWrap.style.display = bothOn ? '' : 'none';
+                    defaultTypeSelect.disabled = !bothOn;
+                }
+
+                syncDefaultTypeVisibility();
+                if (singleToggle) {
+                    singleToggle.addEventListener('change', syncDefaultTypeVisibility);
+                }
+                if (recurringToggle) {
+                    recurringToggle.addEventListener('change', syncDefaultTypeVisibility);
+                }
             }());
         </script>
     </div>
@@ -441,12 +526,34 @@ function ofiaruje_maybe_enqueue_assets() {
 //  CSS
 // ─────────────────────────────────────────────────────────────
 function ofiaruje_inline_css() {
+    $critical_css = ofiaruje_critical_inline_css();
     $custom_css = trim( (string) get_option( 'ofiaruje_custom_css', '' ) );
     if ( '' !== $custom_css ) {
-        return $custom_css;
+        return $critical_css . "\n" . $custom_css;
     }
 
-    return ofiaruje_default_inline_css();
+    return $critical_css . "\n" . ofiaruje_default_inline_css();
+}
+
+/**
+ * Critical CSS needed for form mode switching to work even when
+ * admins previously saved legacy custom CSS from older plugin versions.
+ */
+function ofiaruje_critical_inline_css() {
+    return '
+.ofiaruje-hidden{display:none!important}
+
+.ofiaruje-tabs{display:flex;gap:10px;margin:0 0 1.2rem}
+.ofiaruje-tab{
+    flex:1 1 50%;padding:11px 10px;border:2px solid #e0e0e0;border-radius:10px;
+    background:#fff;color:#666;font-size:.92rem;font-weight:700;letter-spacing:.01em;
+    cursor:pointer;transition:border-color .15s,background .15s,color .15s
+}
+.ofiaruje-tab:hover{border-color:#f0a500;color:#b37d00}
+.ofiaruje-tab.is-active{border-color:#f0a500;background:#fff8e6;color:#b37d00}
+
+.ofiaruje-recurring{padding:12px;border:1px dashed #e7c86b;border-radius:10px;background:#fffcf2}
+';
 }
 
 function ofiaruje_default_inline_css() {
@@ -454,6 +561,22 @@ function ofiaruje_default_inline_css() {
 /* ── Ofiaruje Donation Form ─────────────────────────────────── */
 .ofiaruje-wrap *{box-sizing:border-box}
 .ofiaruje-wrap{max-width:520px;margin:0 auto;font-family:inherit;color:#222}
+
+/* Type tabs */
+.ofiaruje-tabs{display:flex;gap:10px;margin:0 0 1.2rem}
+.ofiaruje-tab{
+    flex:1 1 50%;padding:11px 10px;border:2px solid #e0e0e0;border-radius:10px;
+    background:#fff;color:#666;font-size:.92rem;font-weight:700;letter-spacing:.01em;
+    cursor:pointer;transition:border-color .15s,background .15s,color .15s
+}
+.ofiaruje-tab:hover{border-color:#f0a500;color:#b37d00}
+.ofiaruje-tab.is-active{border-color:#f0a500;background:#fff8e6;color:#b37d00}
+
+/* Shared visibility helper */
+.ofiaruje-hidden{display:none!important}
+
+/* Recurring-only donor section */
+.ofiaruje-recurring{padding:12px;border:1px dashed #e7c86b;border-radius:10px;background:#fffcf2}
 
 /* Section titles */
 .ofiaruje-section-title{font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#888;margin:0 0 .7rem}
@@ -509,8 +632,15 @@ function ofiaruje_default_inline_css() {
     font-size:.97rem;color:#222;background:#fff;
     transition:border-color .15s
 }
+.ofiaruje-field select{
+    padding:10px 13px;border:1.5px solid #ddd;border-radius:8px;
+    font-size:.97rem;color:#222;background:#fff;
+    transition:border-color .15s
+}
 .ofiaruje-field input:focus{border-color:#f0a500;outline:none}
+.ofiaruje-field select:focus{border-color:#f0a500;outline:none}
 .ofiaruje-field input.is-invalid{border-color:#dc3545}
+.ofiaruje-field select.is-invalid{border-color:#dc3545}
 .ofiaruje-field .ofiaruje-field-error{font-size:.8rem;color:#dc3545;margin-top:3px;display:none}
 .ofiaruje-field .ofiaruje-field-error.visible{display:block}
 .ofiaruje-optional{font-size:.78rem;font-weight:400;color:#aaa;margin-left:4px}
@@ -572,10 +702,16 @@ function ofiaruje_inline_js() {
     var form = document.getElementById("ofiaruje-donation-form");
     if (!form) return;
 
-    var amountInput  = document.getElementById("ofiaruje-amount-input");
-    var amountHidden = document.getElementById("ofiaruje-amount-hidden");
-    var amountError  = document.getElementById("ofiaruje-amount-error");
-    var radios       = form.querySelectorAll("input[name=\'ofiaruje_preset\']");
+    var amountInput   = document.getElementById("ofiaruje-amount-input");
+    var amountHidden  = document.getElementById("ofiaruje-amount-hidden");
+    var amountError   = document.getElementById("ofiaruje-amount-error");
+    var donationType  = document.getElementById("ofiaruje-donation-type");
+    var radios        = form.querySelectorAll("input[name=\'ofiaruje_preset\']");
+    var tabButtons    = form.querySelectorAll("button[data-ofiaruje-tab]");
+    var recurringWrap = document.getElementById("ofiaruje-recurring-fields");
+    var recurringReq  = form.querySelectorAll("input[data-recurring-required], select[data-recurring-required]");
+
+    if (!amountInput || !amountHidden || !amountError || !donationType) return;
 
     // ── Initialise hidden amount from the pre-checked radio ──────────────
     (function init() {
@@ -601,8 +737,42 @@ function ofiaruje_inline_js() {
         amountHidden.value = amountInput.value;
     });
 
+    function setRecurringRequiredState(enabled) {
+        recurringReq.forEach(function (input) {
+            input.disabled = !enabled;
+            if (!enabled) {
+                input.classList.remove("is-invalid");
+                var wrapper = input.closest(".ofiaruje-field");
+                var err = wrapper ? wrapper.querySelector(".ofiaruje-field-error") : null;
+                if (err) err.classList.remove("visible");
+            }
+        });
+    }
+
+    function setType(type) {
+        donationType.value = type;
+        if (recurringWrap) recurringWrap.classList.toggle("ofiaruje-hidden", type !== "recurring");
+        setRecurringRequiredState(type === "recurring");
+
+        tabButtons.forEach(function (btn) {
+            var active = btn.getAttribute("data-ofiaruje-tab") === type;
+            btn.classList.toggle("is-active", active);
+            btn.setAttribute("aria-selected", active ? "true" : "false");
+        });
+    }
+
+    tabButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            setType(btn.getAttribute("data-ofiaruje-tab"));
+        });
+    });
+
+    setType(donationType.value === "recurring" ? "recurring" : "single");
+
     // ── Required-field validation helpers ───────────────────────────────
     function validateField(input) {
+        if (input.disabled) return true;
+
         var wrapper  = input.closest(".ofiaruje-field");
         var errorEl  = wrapper ? wrapper.querySelector(".ofiaruje-field-error") : null;
         var value    = input.value.trim();
@@ -624,7 +794,7 @@ function ofiaruje_inline_js() {
     }
 
     // ── Live error clearing ──────────────────────────────────────────────
-    form.querySelectorAll("input[data-required]").forEach(function (input) {
+    form.querySelectorAll("input[data-required], input[data-recurring-required], select[data-recurring-required]").forEach(function (input) {
         input.addEventListener("input", function () {
             if (input.value.trim() !== "") {
                 validateField(input);
@@ -659,6 +829,16 @@ function ofiaruje_inline_js() {
             }
         });
 
+        // Validate recurring-only fields
+        if (donationType.value === "recurring") {
+            form.querySelectorAll("input[data-recurring-required], select[data-recurring-required]").forEach(function (input) {
+                if (!validateField(input)) {
+                    if (!firstInvalid) firstInvalid = input;
+                    valid = false;
+                }
+            });
+        }
+
         if (!valid) {
             e.preventDefault();
             if (firstInvalid) firstInvalid.focus();
@@ -680,7 +860,29 @@ function ofiaruje_render_form( $atts ) {
     $preset_amounts = get_option( 'ofiaruje_preset_amounts', '50,100,200,500' );
     $base_url       = rtrim( get_option( 'ofiaruje_base_url', 'https://ofiaruje.pl' ), '/' );
     $show_payment_icons = get_option( 'ofiaruje_show_payment_icons', '1' ) === '1';
+    $show_single    = get_option( 'ofiaruje_enable_single', '1' ) === '1';
+    $show_recurring = get_option( 'ofiaruje_enable_recurring', '1' ) === '1';
+    $default_type   = (string) get_option( 'ofiaruje_default_donation_type', 'single' );
     $payment_methods = ofiaruje_get_payment_methods();
+
+    if ( ! $show_single && ! $show_recurring ) {
+        if ( current_user_can( 'manage_options' ) ) {
+            return sprintf(
+                '<p style="color:#dc3545;border:1px solid #dc3545;padding:10px 14px;border-radius:6px;max-width:520px;">'
+                . '<strong>Ofiaruje:</strong> Oba typy wpłat są wyłączone. '
+                . '<a href="%s">Przejdź do ustawień wtyczki</a>, aby włączyć co najmniej jeden.'
+                . '</p>',
+                esc_url( admin_url( 'options-general.php?page=ofiaruje-donation-form' ) )
+            );
+        }
+        return '';
+    }
+
+    if ( $show_single && $show_recurring ) {
+        $active_type = 'recurring' === $default_type ? 'recurring' : 'single';
+    } else {
+        $active_type = $show_single ? 'single' : 'recurring';
+    }
 
     // Show a friendly notice to admins when the plugin isn't configured yet.
     if ( empty( $fundraiser_id ) ) {
@@ -744,8 +946,31 @@ function ofiaruje_render_form( $atts ) {
             action="<?php echo $action_url; ?>"
             novalidate
         >
+            <?php if ( $show_single && $show_recurring ) : ?>
+            <div class="ofiaruje-tabs" role="tablist" aria-label="Typ wpłaty">
+                <button
+                    type="button"
+                    class="ofiaruje-tab <?php echo 'single' === $active_type ? 'is-active' : ''; ?>"
+                    data-ofiaruje-tab="single"
+                    role="tab"
+                    aria-selected="<?php echo 'single' === $active_type ? 'true' : 'false'; ?>"
+                >
+                    Wpłata jednorazowa
+                </button>
+                <button
+                    type="button"
+                    class="ofiaruje-tab <?php echo 'recurring' === $active_type ? 'is-active' : ''; ?>"
+                    data-ofiaruje-tab="recurring"
+                    role="tab"
+                    aria-selected="<?php echo 'recurring' === $active_type ? 'true' : 'false'; ?>"
+                >
+                    Wpłata miesięczna
+                </button>
+            </div>
+            <?php endif; ?>
+
             <!-- ── Hidden system fields ── -->
-            <input type="hidden" name="donation[type]"     value="single">
+            <input type="hidden" id="ofiaruje-donation-type" name="donation[type]" value="<?php echo esc_attr( $active_type ); ?>">
             <input type="hidden" name="donation[tip]"      value="0">
             <input type="hidden" name="donation[currency]" value="PLN">
             <!-- This field carries the validated integer amount to the server -->
@@ -864,6 +1089,74 @@ function ofiaruje_render_form( $atts ) {
                         placeholder="Przykładowa Sp. z o.o."
                         autocomplete="organization"
                     >
+                </div>
+
+                <!-- Dane dodatkowe dla wpłaty miesięcznej -->
+                <div id="ofiaruje-recurring-fields" class="ofiaruje-recurring <?php echo $active_type === 'recurring' ? '' : 'ofiaruje-hidden'; ?>">
+                    <div class="ofiaruje-row">
+                        <div class="ofiaruje-field">
+                            <label for="ofiaruje-street">Ulica</label>
+                            <input
+                                type="text"
+                                id="ofiaruje-street"
+                                name="donation[donor][details][street]"
+                                placeholder="Przykładowa 12/3"
+                                autocomplete="address-line1"
+                                data-recurring-required="1"
+                            >
+                            <span class="ofiaruje-field-error" role="alert">Podaj ulicę i numer.</span>
+                        </div>
+                    </div>
+
+                    <div class="ofiaruje-row">
+                        <div class="ofiaruje-field">
+                            <label for="ofiaruje-city">Miasto</label>
+                            <input
+                                type="text"
+                                id="ofiaruje-city"
+                                name="donation[donor][details][city]"
+                                placeholder="Warszawa"
+                                autocomplete="address-level2"
+                                data-recurring-required="1"
+                            >
+                            <span class="ofiaruje-field-error" role="alert">Podaj miasto.</span>
+                        </div>
+
+                        <div class="ofiaruje-field">
+                            <label for="ofiaruje-postal">Kod pocztowy</label>
+                            <input
+                                type="text"
+                                id="ofiaruje-postal"
+                                name="donation[donor][details][postal]"
+                                placeholder="00-000"
+                                autocomplete="postal-code"
+                                data-recurring-required="1"
+                            >
+                            <span class="ofiaruje-field-error" role="alert">Podaj kod pocztowy.</span>
+                        </div>
+                    </div>
+
+                    <div class="ofiaruje-row">
+                        <div class="ofiaruje-field">
+                            <label for="ofiaruje-country">Kraj</label>
+                            <select
+                                id="ofiaruje-country"
+                                name="donation[donor][city][country]"
+                                data-recurring-required="1"
+                            >
+                                <option value="Polska" selected>Polska</option>
+                                <option value="Niemcy">Niemcy</option>
+                                <option value="Czechy">Czechy</option>
+                                <option value="Słowacja">Słowacja</option>
+                                <option value="Litwa">Litwa</option>
+                                <option value="Ukraina">Ukraina</option>
+                                <option value="Wielka Brytania">Wielka Brytania</option>
+                                <option value="Irlandia">Irlandia</option>
+                                <option value="Stany Zjednoczone">Stany Zjednoczone</option>
+                            </select>
+                            <span class="ofiaruje-field-error" role="alert">Podaj kraj.</span>
+                        </div>
+                    </div>
                 </div>
 
             </div><!-- /.ofiaruje-fields -->

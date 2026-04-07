@@ -1,100 +1,97 @@
-# Ofiaruje – Formularz Darowizn
+# Ofiaruje - Formularz Darowizn
 
-Wtyczka WordPress umożliwiająca osadzenie formularza darowizny platformy **ofiaruje.pl** na dowolnej stronie WordPress.
+Wtyczka WordPress do osadzania formularza darowizny platformy ofiaruje.pl na dowolnej stronie przez shortcode.
 
----
+## Co nowego w 2.0.0
+
+- Dodano dwa tryby formularza jako zakladki: Wplata jednorazowa i Wplata miesieczna.
+- Dodano pola dodatkowe dla trybu miesiecznego: ulica, miasto, kod pocztowy, kraj (domyslnie Polska).
+- Dodano ustawienia widocznosci trybow w panelu: osobno dla jednorazowej i miesiecznej.
+- Dodano ustawienie domyslnego typu wplaty, aktywne tylko gdy oba tryby sa wlaczone.
+- Utrzymano pelna zgodnosc z dotychczasowym shortcode [ofiaruje_formularz].
 
 ## Instalacja (GitHub)
 
-GitHub jest podstawowym źródłem dystrybucji wtyczki.
-
-1. Wejdź do repozytorium: `https://github.com/janlekszycki/ofiaruje-donation-form`.
-2. Pobierz paczkę ZIP:
-   - `Code -> Download ZIP` (wersja bieżąca), albo
-   - `Releases` (zalecane dla stabilnych wydań).
-3. Upewnij się, że archiwum zawiera katalog `ofiaruje-donation-form/`.
-4. W panelu WordPress przejdź do **Wtyczki -> Dodaj nową -> Wyślij wtyczkę**.
-5. Wybierz pobrany ZIP i kliknij **Zainstaluj teraz**.
-6. Aktywuj wtyczkę.
-
-> Repozytorium publiczne: `janlekszycki/ofiaruje-donation-form`.
-
----
+1. Wejdz do repozytorium: https://github.com/janlekszycki/ofiaruje-donation-form.
+2. Pobierz ZIP z Releases (zalecane) albo Code -> Download ZIP.
+3. Upewnij sie, ze archiwum zawiera katalog ofiaruje-donation-form/.
+4. W WordPress przejdz do Wtyczki -> Dodaj nowa -> Wyslij wtyczke.
+5. Wybierz ZIP, kliknij Zainstaluj teraz, a potem Aktywuj.
 
 ## Konfiguracja
 
-Przejdź do **Ustawienia → Ofiaruje** i wypełnij pola:
+Przejdz do Ustawienia -> Ofiaruje.
 
-| Pole                                | Opis                                                                                                             |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **ID Zbiórki**                      | Identyfikator zbiórki (`_id`) z platformy Ofiaruje.pl. Widoczny w adresie URL: `ofiaruje.pl/f/<ID>`              |
-| **Predefiniowane kwoty (PLN)**      | Kwoty oddzielone przecinkami (np. `50,100,200,500`). Minimalna wartość: **20 PLN**                               |
-| **Adres platformy**                 | Domyślnie `https://ofiaruje.pl` – zazwyczaj nie wymaga zmiany                                                    |
-| **UTM tracking (on/off)**           | Dodaje parametry `utm_*` do adresu formularza (`/d?fid=...`)                                                     |
-| **UTM Source**                      | Domyślnie `wordpress`                                                                                            |
-| **UTM Medium**                      | Domyślnie `plugin`                                                                                               |
-| **UTM Campaign**                    | Opcjonalna nazwa kampanii                                                                                        |
-| **UTM Term**                        | Opcjonalny parametr kampanii                                                                                     |
-| **UTM Content**                     | Opcjonalny parametr kampanii                                                                                     |
-| **Własny CSS formularza**           | Pole jest automatycznie wypełnione domyślnym CSS. Możesz go edytować i przywrócić przyciskiem **Ustaw domyślne** |
-| **Ikony płatności pod przyciskiem** | Jeden przełącznik `on/off` pokazujący rząd ikon BLIK, Visa, Mastercard, Apple Pay, Google Pay, Revolut Pay       |
+| Pole                            | Opis                                                                |
+| ------------------------------- | ------------------------------------------------------------------- |
+| ID Zbiorki                      | Identyfikator zbiorki (\_id) z panelu ofiaruje.pl                   |
+| Predefiniowane kwoty (PLN)      | Kwoty oddzielone przecinkami, minimum 20                            |
+| Adres platformy                 | Domyslnie https://ofiaruje.pl                                       |
+| UTM tracking + pola utm\_\*     | Opcjonalne parametry kampanii                                       |
+| Wlasny CSS formularza           | Nadpisanie wygladu formularza                                       |
+| Ikony platnosci pod przyciskiem | Pokaz/ukryj ikony metod platnosci                                   |
+| Pokazuj Wplata jednorazowa      | Wlacza/ukrywa tryb jednorazowy                                      |
+| Pokazuj Wplata miesieczna       | Wlacza/ukrywa tryb miesieczny                                       |
+| Domyslny typ wplaty             | Wybiera startowy tryb (single/recurring), gdy oba tryby sa wlaczone |
 
----
+Uwagi o trybach:
 
-## Użycie
+- Domyslnie oba tryby sa wlaczone.
+- Jezeli wlaczony jest tylko jeden tryb, formularz automatycznie uruchamia ten tryb i ukrywa zakladki.
+- Ustawienie domyslnego typu jest ukrywane i blokowane, gdy aktywny jest tylko jeden tryb.
 
-Wklej shortcode na wybranej stronie lub wpisie:
+## Aktualizacja z wersji legacy (1.x -> 2.0.0)
 
-```
+Nie trzeba odinstalowywac poprzedniej wersji wtyczki.
+
+1. Zrob kopie zapasowa strony (pliki + baza danych).
+2. W WordPress przejdz do Wtyczki -> Dodaj nowa -> Wyslij wtyczke.
+3. Wybierz paczke ZIP z wersja 2.0.0 i kliknij Zainstaluj teraz.
+4. Potwierdz nadpisanie istniejacej wtyczki, jesli WordPress o to zapyta.
+5. Po aktualizacji wejdz w Ustawienia -> Ofiaruje i zapisz konfiguracje.
+
+Po aktualizacji sprawdz:
+
+- czy wybrane sa poprawne tryby wplat (jednorazowa/miesieczna),
+- czy domyslny typ wplaty jest ustawiony zgodnie z oczekiwaniem,
+- czy shortcode [ofiaruje_formularz] dziala poprawnie na stronie.
+
+## Uzycie
+
+Wklej shortcode:
+
+```text
 [ofiaruje_formularz]
 ```
 
----
+## Zachowanie formularza
 
-## Działanie formularza
+Tryb jednorazowy wysyla:
 
-Formularz zawiera:
+- donation[type]=single
 
-- **Predefiniowane kwoty** – wyświetlane jako przyciski radiowe; konfigurowane w ustawieniach wtyczki
-- **Pole kwoty** – możliwość wpisania dowolnej kwoty (minimum 20 PLN)
-- **Imię** i **Nazwisko** – pola wymagane
-- **Adres e-mail** – pole wymagane, walidacja formatu
-- **Nazwa firmy/organizacji** – opcjonalne
-- **Checkbox anonimowości** – ukrywa dane darczyńcy na stronie zbiórki
-- **Rząd ikon metod płatności** pod przyciskiem CTA (włączany jednym przełącznikiem)
-- **UTM tracking** (włączany przełącznikiem) z polami: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`
-- **Automatyczne ładowanie SVG z folderu `assets/`**: `blik-logo.svg`, `visa-logo.svg`, `mastercard-logo.svg`, `apple-pay-logo.svg`, `google-pay-logo.svg`, `revolut-logo.svg` (lub `revolut-pay-logo.svg`)
-- **Custom CSS** ładowany inline (z opcją przywrócenia domyślnych styli)
+Tryb miesieczny wysyla:
 
-Po zatwierdzeniu formularz kieruje darczyńcę bezpośrednio do strony płatności na **ofiaruje.pl**, gdzie realizowana jest transakcja przez Stripe.
+- donation[type]=recurring
+- donation[donor][details][street]
+- donation[donor][details][city]
+- donation[donor][details][postal]
+- donation[donor][city][country]
 
----
+Pozostale pola (imie, nazwisko, email, orgname, anonymous, amount) dzialaja jak dotychczas.
 
 ## Wymagania
 
 - WordPress 5.0+
 - PHP 7.4+
-- Aktywna zbiórka na platformie ofiaruje.pl
+- Aktywna zbiorka na ofiaruje.pl
 
----
+## Bezpieczenstwo
 
-## Bezpieczeństwo
-
-- Formularz przesyła dane metodą `POST` bezpośrednio do `ofiaruje.pl` – dane darczyńcy nigdy nie są przechowywane w bazie danych WordPress.
-- Wszystkie wartości ustawień są sanityzowane (`sanitize_text_field`, `esc_url_raw`, `absint`).
-- Wyjście HTML jest zawsze escapowane (`esc_attr`, `esc_html`, `esc_url`).
-
----
-
-## GitHub
-
-- Kod pluginu: `https://github.com/janlekszycki/ofiaruje-donation-form`
-- Katalog pluginu: `wordpress-plugin/ofiaruje-donation-form/`
-- GitHub to podstawowy kanał publikacji i aktualizacji.
-- Zalecenie dla wdrożeń: publikuj gotowy ZIP pluginu jako artefakt w `Releases`.
-
----
+- Formularz wysyla dane metoda POST bezposrednio do ofiaruje.pl.
+- Dane darczyncy nie sa zapisywane w bazie WordPress.
+- Ustawienia sa sanityzowane i wyjscie HTML jest escapowane.
 
 ## Wersja
 
-**1.0.0** – pierwsze wydanie
+2.0.0
