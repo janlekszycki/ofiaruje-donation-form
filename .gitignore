@@ -8,13 +8,3 @@
 
 # Logs
 *.log
-
-# Archives
-*.zip
-
-# Marketing subpage
-SUBPAGE_CONTENT_BOOTSTRAP.html
-
-# GITHUB Files
-.github/
-GITHUB_REPOSITORY_DETAILS.md
