@@ -21,7 +21,7 @@ add_action( 'admin_menu', 'ofiaruje_admin_menu' );
 function ofiaruje_admin_menu() {
     add_options_page(
         'Ofiaruje – Formularz Darowizn',
-        'Ofiaruje',
+        'Ofiaruje – Formularz Darowizn',
         'manage_options',
         'ofiaruje-donation-form',
         'ofiaruje_render_settings_page'
